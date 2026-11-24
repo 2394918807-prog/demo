@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>NFC Relay</title>
+    
+    <style>
+        :root {
+            --card-bg: #EAE6DF;
+            --card-shadow: 0 32px 60px -12px rgba(28, 32, 34, 0.38), 0 14px 28px -8px rgba(28, 32, 34, 0.24);
+            --ink-primary: #232220;
+            --ink-secondary: #5C5851;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            overflow: hidden;
+            background-color: #6B7275;
+            color: var(--ink-primary);
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        /* 全屏背景毛玻璃光影 */
+        .ambient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 0;
+            pointer-events: none;
+            background: 
+                radial-gradient(circle at 82% 24%, rgba(218, 198, 168, 0.65) 0%, transparent 48%),
+                radial-gradient(circle at 18% 35%, rgba(76, 94, 102, 0.75) 0%, transparent 55%),
+                radial-gradient(circle at 50% 62%, rgba(235, 228, 216, 0.45) 0%, transparent 45%),
+                linear-gradient(165deg, #52626A 0%, #8F938E 48%, #B2ABA0 100%);
+        }
+
+        .bokeh-shape-1 {
+            position: absolute;
+            top: 42%;
+            left: 22%;
+            width: 56%;
+            height: 16%;
+            background: rgba(242, 238, 230, 0.32);
+            filter: blur(28px);
+            -webkit-filter: blur(28px);
+            border-radius: 12px;
+        }
+
+        .bokeh-shape-2 {
+            position: absolute;
+            top: 63%;
+            left: 22%;
+            width: 56%;
+            height: 16%;
+            background: rgba(242, 238, 230, 0.28);
+            filter: blur(32px);
+            -webkit-filter: blur(32px);
+            border-radius: 12px;
+        }
+
+        /* 主容器：上下布局，卡片绝对居中 */
+        .page-wrapper {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .main-stage {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: max(16px, env(safe-area-inset-top)) 20px 16px 20px;
+            position: relative;
+        }
+
+        /* 实体纸卡容器 */
+        .tactile-card {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            padding: 32px 28px 26px 28px;
+            background-color: var(--card-bg);
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.045'/%3E%3C/svg%3E");
+            box-shadow: 
+                var(--card-shadow),
+                inset 0 1px 1px rgba(255, 255, 255, 0.75),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+            transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.65s ease;
+            will-change: transform, opacity;
+        }
+
+        .card-dropping {
+            transform: translateY(140%) scale(0.92) rotateX(12deg);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* 地点标题 */
+        .location-label {
+            font-size: 16px;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            color: var(--ink-secondary);
+        }
+
+        /* 引导语 */
+        .prompt-subtitle {
+            margin-top: 14px;
+            font-size: 15.5px;
+            line-height: 1.55;
+            color: #2F2D2A;
+        }
+
+        /* 输入框区域 */
+        .input-box-wrapper {
+            margin-top: 24px;
+            width: 100%;
+        }
+
+        .postcard-textarea {
+            display: block;
+            width: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            background-image: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent 31px,
+                rgba(104, 100, 94, 0.25) 32px
+            );
+            font-family: inherit;
+            font-size: 16px;
+            line-height: 32px;
+            height: 128px; /* 精确 4 行高度 */
+            resize: none;
+            color: var(--ink-primary);
+            user-select: text;
+            -webkit-user-select: text;
+            padding: 0;
+        }
+
+        .postcard-textarea::placeholder {
+            color: rgba(104, 100, 94, 0.55);
+            font-style: italic;
+        }
+
+        /* 右下角发送按钮区 */
+        .action-row {
+            margin-top: 20px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .send-btn {
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 11.5px;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #1E1D1B;
+            padding: 4px 0 4px 12px;
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.2s ease;
+        }
+
+        .send-btn.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .send-btn:active {
+            transform: translateY(1px);
+            opacity: 0.6;
+        }
+
+        /* 发送成功后的完成态 */
+        .queued-panel {
+            position: absolute;
+            left: 24px;
+            right: 24px;
+            max-width: 340px;
+            margin: 0 auto;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+            transform: translateY(12px);
+            pointer-events: none;
+            transition: opacity 0.6s ease 0.35s, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.35s;
+        }
+
+        .queued-panel.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .check-circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: rgba(234, 230, 223, 0.92);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .queued-text {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(30, 32, 30, 0.9);
+            margin-bottom: 20px;
+        }
+
+        .reset-btn {
+            padding: 10px 20px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.28);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            font-size: 10.5px;
+            font-weight: 500;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #1E201E;
+            cursor: pointer;
+        }
+
+        /* 底部收集状态栏 */
+        .footer-bar {
+            width: 100%;
+            padding: 8px 24px max(28px, env(safe-area-inset-bottom)) 24px;
+        }
+
+        .footer-inner {
+            max-width: 400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10.5px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(30, 32, 30, 0.82);
+        }
+
+        .footer-bold {
+            font-weight: 700;
+            color: #141614;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 毛玻璃背景 -->
+    <div class="ambient-bg">
+        <div class="bokeh-shape-1"></div>
+        <div class="bokeh-shape-2"></div>
+    </div>
+
+    <div class="page-wrapper">
+        <!-- 居中主舞台 -->
+        <main id="mainStage" class="main-stage">
+            
+            <!-- 投递完成状态 -->
+            <div id="queuedState" class="queued-panel">
+                <div class="check-circle">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#232220" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+                <p class="queued-text">QUEUED FOR NEXT CRANK</p>
+                <button id="resetDemoBtn" type="button" class="reset-btn">↺ Reset</button>
+            </div>
+
+            <!-- 纸卡弹窗 -->
+            <article id="promptCard" class="tactile-card">
+                <div class="location-label">Edinburgh</div>
+                <p class="prompt-subtitle">Write a prompt for the next stranger.</p>
+
+                <div class="input-box-wrapper">
+                    <textarea 
+                        id="promptInput" 
+                        rows="4" 
+                        maxlength="120"
+                        enterkeyhint="done"
+                        placeholder="e.g. Turn left and walk until you smell fresh coffee..."
+                        class="postcard-textarea"
+                    ></textarea>
+                </div>
+
+                <div class="action-row">
+                    <button id="submitBtn" type="button" disabled class="send-btn">
+                        SEND →
+                    </button>
+                </div>
+            </article>
+        </main>
+
+        <!-- 底部进度 -->
+        <footer class="footer-bar">
+            <div class="footer-inner">
+                <span class="footer-bold">1 OF 15 COLLECTED</span>
+                <span>·</span>
+                <span>KEEP IN WALLET</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        (function () {
+            const mainStage = document.getElementById('mainStage');
+            const promptInput = document.getElementById('promptInput');
+            const submitBtn = document.getElementById('submitBtn');
+            const promptCard = document.getElementById('promptCard');
+            const queuedState = document.getElementById('queuedState');
+            const resetDemoBtn = document.getElementById('resetDemoBtn');
+
+            const MAX_WORDS = 15;
+
+            mainStage.addEventListener('click', function (e) {
+                if (e.target === mainStage) {
+                    promptInput.blur();
+                }
+            });
+
+            promptInput.addEventListener('input', function () {
+                const rawText = promptInput.value;
+                const words = rawText.trim() ? rawText.trim().split(/\s+/) : [];
+
+                if (words.length > MAX_WORDS) {
+                    promptInput.value = words.slice(0, MAX_WORDS).join(' ') + ' ';
+                }
+
+                if (words.length > 0) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.add('active');
+                } else {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.remove('active');
+                }
+            });
+
+            promptInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    promptInput.blur();
+                }
+            });
+
+            submitBtn.addEventListener('click', function () {
+                if (submitBtn.disabled) return;
+
+                promptInput.blur();
+
+                if (navigator.vibrate) {
+                    navigator.vibrate([18, 40, 25]);
+                }
+
+                setTimeout(() => {
+                    promptCard.classList.add('card-dropping');
+
+                    setTimeout(() => {
+                        queuedState.classList.add('visible');
+                    }, 250);
+                }, 120);
+            });
+
+            resetDemoBtn.addEventListener('click', function () {
+                queuedState.classList.remove('visible');
+                
+                setTimeout(() => {
+                    promptInput.value = '';
+                    submitBtn.disabled = true;
+                    submitBtn.classList.remove('active');
+                    promptCard.classList.remove('card-dropping');
+                }, 200);
+            });
+        })();
+    </script>
+</body>
+</html>
