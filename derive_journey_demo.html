@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f2efe4"><title>dérive · wander, notice, pass it on</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f2efe4;
+  --ink: #643819;
+  --forest: #084d40;
+  --line: #c4c4b2;
+  --gutter: clamp(18px, 6vw, 25px);
+  --font: 'Fira Code', Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--paper); }
+body { color: var(--ink); font: 400 14px/1.55 var(--font); }
+button, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; touch-action: manipulation; }
+:focus-visible { outline: 2px solid var(--forest); outline-offset: 4px; }
+[hidden] { display: none !important; }
+.app {
+  max-width: 510px;
+  min-height: 100vh;
+  min-height: 100svh;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 0 30px #362a1d12;
+}
+.top {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  padding: calc(8px + env(safe-area-inset-top)) var(--gutter) 8px;
+  min-height: calc(70px + env(safe-area-inset-top));
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #e5b67230, #e5b67218);
+  color: #a84710;
+}
+.top::after {
+  content: '';
+  position: absolute;
+  inset-inline: max(var(--gutter), env(safe-area-inset-left)) max(var(--gutter), env(safe-area-inset-right));
+  bottom: 0;
+  border-bottom: 1px dashed #c8592480;
+  pointer-events: none;
+}
+.logo { font-size: 25px; font-weight: 600; letter-spacing: -1.7px; }
+.back {
+  position: absolute;
+  left: max(calc(var(--gutter) - 6px), env(safe-area-inset-left));
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px 12px;
+  background: transparent;
+}
+.back svg { stroke: currentColor; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+.page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 0 max(var(--gutter), env(safe-area-inset-right))
+    max(18px, env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left));
+}
+.page.active { animation: enter .24s ease-out both; }
+.receipt-page.active { animation: none; }
+@keyframes enter { from { opacity: .62; transform: translateY(5px); } }
+h1 { font-weight: 500; line-height: 1.2; letter-spacing: -1.65px; }
+/* These headings receive focus only when a new screen opens. */
+h1[tabindex="-1"]:focus { outline: none; }
+.bottom { margin-top: auto; padding-top: 18px; }
+.action {
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--forest);
+  border-radius: 6px 20px 8px 19px;
+  background: var(--forest);
+  color: #eef2e4;
+  font-weight: 500;
+  transition: background-color .16s, transform .16s;
+}
+.action:disabled { background: #e4e5d8; color: #643819; border-color: #a9ab97; cursor: default; }
+@media (hover: hover) {
+  .action:hover:enabled { background: #176251; }
+  .back:hover, .inspiration button:hover { background: #e7e5d7; }
+}
+.action:active:enabled, .back:active, .inspiration button:active { transform: translateY(2px); }
+.receipt-page { text-align: center; }
+.receipt-page .symbol {
+  display: block;
+  width: clamp(86px, 16svh, 130px);
+  height: auto;
+  margin: clamp(18px, 8svh, 90px) auto 10px;
+  flex-shrink: 0;
+}
+.receipt-page h1 { font-size: clamp(25px, 7vw, 38px); margin: 14px 0 8px; }
+.receipt-sub { line-height: 1.65; margin: 0 0 clamp(24px, 6svh, 56px); }
+.ticket {
+  width: 100%;
+  max-width: 385px;
+  min-height: clamp(100px, 16svh, 140px);
+  margin: auto auto 0;
+  padding: 14px clamp(12px, 4vw, 22px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  position: relative;
+  text-align: left;
+  background: #faf8ee;
+  border: 1px dashed #a9a592;
+  rotate: -.75deg;
+}
+.ticket::before, .ticket::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  width: 14px;
+  height: 14px;
+  border: 1px dashed #a9a592;
+  border-radius: 50%;
+  background: var(--paper);
+}
+.ticket::before { left: -8px; }
+.ticket::after { right: -8px; }
+.ticket small { display: block; font-size: clamp(9px, 2.5vw, 10px); letter-spacing: .08em; }
+.ticket strong { display: block; margin-top: 7px; font-size: clamp(13px, 4.2vw, 18px); font-weight: 500; letter-spacing: -.045em; }
+.ticket-date { flex-shrink: 0; white-space: nowrap; font-size: clamp(10px, 3vw, 12px); font-weight: 500; }
+.ticket-intro {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+  background: #dfddd6;
+}
+.ticket-intro .ticket { position: absolute; margin: 0; max-width: none; }
+.ticket-intro .ticket::before, .ticket-intro .ticket::after { background: #dfddd6; }
+.journey-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: clamp(10px, 4svh, 46px) 0 12px;
+}
+.demo-routes { position: relative; z-index: 3; flex-shrink: 0; }
+.demo-toggle {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  list-style: none;
+  border-radius: 50%;
+  color: var(--ink);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.demo-toggle::-webkit-details-marker { display: none; }
+.demo-toggle svg { fill: currentColor; }
+.demo-routes[open] .demo-toggle { background: #e5b67234; }
+.demo-menu {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 4px);
+  padding: 8px;
+  background: #faf5e9;
+  border: 1px solid #c4c4b2;
+  border-radius: 5px 13px 6px 11px;
+  box-shadow: 0 5px 15px #64381920;
+}
+.demo-routes:not([open]) .demo-menu { display: none; }
+.demo-menu [role="group"] { display: flex; gap: 3px; }
+.demo-menu p { margin: 0 0 5px 3px; font-size: 11px; }
+.demo-route {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid #c4c4b2;
+  border-radius: 4px 11px 5px 10px;
+  background: transparent;
+}
+.demo-route[aria-pressed="true"] {
+  border-color: #a84710;
+  background: #e5b67247;
+  font-weight: 600;
+}
+.demo-route:active { transform: translateY(1px); }
+.demo-route:focus-visible, .demo-toggle:focus-visible { outline-offset: 1px; }
+.journey-page h1 { font-size: clamp(32px, 9vw, 46px); margin: 0; }
+.map {
+  height: clamp(260px, 44svh, 420px);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid #bfc9b9;
+  border-radius: 4px 23px 4px 25px;
+  background: #eaf0e7;
+}
+.map svg { width: 100%; height: 100%; display: block; }
+.stops-title, .map-caption {
+  position: absolute;
+  left: 10px;
+  margin: 0;
+  padding: 3px 7px;
+  background: #f6f4e9ed;
+  border-radius: 2px 6px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.stops-title { top: 10px; font-weight: 600; }
+.map-caption { bottom: 8px; }
+#route-ink { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.map.animate-route #route-ink { animation: draw-route 1.45s cubic-bezier(.28,.08,.45,1) both; }
+@keyframes draw-route { from { stroke-dashoffset: 1; } }
+.pin {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  translate: -50% -50%;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  padding: 0;
+  outline-offset: -4px;
+}
+.pin span {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border: 1px solid #934528;
+  border-radius: 50% 46% 48% 44%;
+  background: #fbf3d9;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 12px;
+  box-shadow: 0 1px 3px #64381938;
+  transition: transform .15s, background-color .15s;
+}
+.pin[aria-pressed="true"] span { color: #fff7e4; background: #964728; box-shadow: 0 0 0 2px #fff7e4; }
+.pin:hover span, .pin:focus-visible span { transform: scale(1.12); }
+.pin:active span { transform: scale(.91); }
+.map.animate-route .pin span { animation: mark-stop .28s ease-out var(--delay) backwards; }
+.pin[aria-pressed="true"] span, .pin:focus-visible span { animation: none !important; }
+@keyframes mark-stop { from { opacity: .58; scale: .76; } }
+.discovery { min-height: 2.7em; margin: 9px 0 5px; font-size: 12px; line-height: 1.35; }
+.statstrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-block: 1px solid var(--line);
+  padding-block: 9px;
+}
+.statstrip div { text-align: center; border-right: 1px solid var(--line); }
+.statstrip div:last-child { border: 0; }
+.statstrip strong { display: block; font-size: clamp(12px, 3.5vw, 16px); font-weight: 500; }
+.statstrip span { display: block; font-size: 10px; letter-spacing: .07em; }
+.editor-page .title {
+  margin: clamp(12px, 5svh, 60px) 0 17px;
+  font-size: clamp(23px, 6.1vw, 32px);
+}
+.writing {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  min-height: clamp(140px, 29svh, 320px);
+  padding: 13px 14px;
+  background: #f8f6ed;
+  border: 1.5px solid #c4c0aa;
+  border-radius: 2px 15px 2px 13px;
+  box-shadow: 3px 4px 0 #e4e3d6;
+}
+.writing:focus-within { border-color: var(--forest); }
+.writing textarea {
+  flex: 1 0 100px;
+  width: 100%;
+  min-height: 100px;
+  resize: vertical;
+  border: 0;
+  padding: 3px;
+  background: transparent;
+  font-size: 16px;
+  line-height: 1.65;
+}
+.writing textarea::placeholder { color: var(--ink); opacity: .78; }
+.hint { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 11px; }
+#count { flex-shrink: 0; }
+.inspiration { margin: 18px 0 0; }
+.inspiration h2 { font-size: 11px; letter-spacing: .12em; font-weight: 600; margin: 0 0 3px; }
+.inspiration button {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 4px;
+  border: 0;
+  border-radius: 4px 11px;
+  background: transparent;
+  text-align: left;
+  font-size: 12px;
+}
+.editor-page .bottom { padding-top: 12px; }
+.sent-page { text-align: center; }
+.sent-page h1 { font-size: clamp(30px, 8vw, 36px); margin: 16px 0 9px; }
+.sent-page .sub { font-size: 13px; margin: 8px 0 0; }
+.quote {
+  margin: 20px 0 0;
+  padding: 14px 17px;
+  border-left: 2px solid #9aa78d;
+  background: #e7e8d9;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.paper-animation {
+  height: clamp(150px, 30svh, 245px);
+  margin: clamp(10px, 5svh, 55px) 0 0;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+.paper-ground { position: absolute; bottom: 13px; left: 18%; right: 18%; border-bottom: 2px solid #345d4f; transform: rotate(-2deg); }
+.paper-slip {
+  position: absolute;
+  width: 38px;
+  height: 25px;
+  bottom: var(--pile-y);
+  left: var(--pile-x);
+  border: 2px solid #295e50;
+  border-radius: 2px 8px 3px 6px;
+  background: #f9f5df;
+  box-shadow: 1px 2px 0 #d2ceae;
+  transform: rotate(var(--rotation));
+  animation: paper-drift var(--duration) linear var(--delay) backwards;
+}
+.paper-slip::before, .paper-slip::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 8px;
+  top: 7px;
+  border-top: 1.5px solid #587767;
+  transform: rotate(-3deg);
+}
+.paper-slip::after { top: 13px; right: 14px; }
+@keyframes paper-drift {
+  0% { opacity: 0; transform: translate(var(--drift), -240px) rotate(-48deg); }
+  16% { opacity: 1; }
+  45% { transform: translate(calc(var(--drift) * -.45), -105px) rotate(45deg); }
+  77% { transform: translate(calc(var(--drift) * .22), -32px) rotate(-20deg); }
+}
+@media (max-height: 610px) {
+  .top { min-height: calc(58px + env(safe-area-inset-top)); }
+  .journey-top { margin-top: 4px; }
+  .map { height: clamp(230px, 44svh, 270px); }
+  .receipt-page .symbol { margin-top: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style></head>
+<body>
+<main class="app" id="app"><header class="top">
+  <button class="back" id="back" type="button" aria-label="Go back" hidden><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><path d="M17 5 L9 13 L17 21"/></svg></button>
+  <div class="logo">dérive.</div>
+</header>
+<section class="page receipt-page active" id="receipt">
+<svg class="symbol art" viewBox="0 0 140 140" aria-hidden="true" fill="none" stroke="#084d40" stroke-width="2.3" stroke-linecap="round"><path d="M43 11Q39 20 43 28M96 15l7 9M18 47l11 3M113 44l10-2"/><path d="M38 38Q49 26 73 32Q103 34 109 60L110 96Q110 108 96 110L41 107Q30 105 31 92L33 55Q33 42 38 38Z"/><path d="M46 54Q70 48 94 56M47 67h46M48 80h25"/><path d="M55 93l8 8 19-20" stroke-width="3.5"/><path d="M25 119q46 12 96 0"/></svg>
+<h1 id="receipt-title" tabindex="-1">receipt received.</h1><div class="receipt-sub">you completed the exploration!</div>
+<div class="ticket"><div><small>EDINBURGH · SCOTLAND</small><strong>old town wander</strong></div><div class="ticket-date"><span>28/11/2026</span></div></div>
+<div class="bottom"><button class="action" id="view">view my journey →</button></div></section>
+<section class="page journey-page" id="journey" hidden><div class="journey-top"><h1 id="journey-title" tabindex="-1">edinburgh.</h1>
+  <details class="demo-routes" id="demo-routes">
+    <summary class="demo-toggle" id="demo-toggle" aria-label="Choose a demo route">
+      <svg width="19" height="19" viewBox="0 0 20 20" aria-hidden="true">
+        <circle cx="4.5" cy="10" r="1.45"/><circle cx="10" cy="10" r="1.45"/><circle cx="15.5" cy="10" r="1.45"/>
+      </svg>
+    </summary>
+    <div class="demo-menu">
+      <p id="demo-route-label">demo route</p>
+      <div role="group" aria-labelledby="demo-route-label">
+    <button class="demo-route" type="button" aria-label="Demo route 1: Old Town" aria-pressed="true" aria-controls="journey-map">1</button>
+    <button class="demo-route" type="button" aria-label="Demo route 2: New Town" aria-pressed="false" aria-controls="journey-map">2</button>
+    <button class="demo-route" type="button" aria-label="Demo route 3: The Meadows" aria-pressed="false" aria-controls="journey-map">3</button>
+    <button class="demo-route" type="button" aria-label="Demo route 4: Holyrood" aria-pressed="false" aria-controls="journey-map">4</button>
+      </div>
+    </div>
+  </details>
+</div>
+<div class="map" id="journey-map" role="group" aria-label="Illustrated Edinburgh walking route with five stops">
+  
+<svg viewBox="0 0 350 350" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="map-paper" x2="0%" y2="100%">
+      <stop stop-color="#edf1e8"/><stop offset="1" stop-color="#f3f1e7"/>
+    </linearGradient>
+  </defs>
+  <rect width="350" height="350" fill="url(#map-paper)"/>
+  <g fill="#dae6d7" stroke="#cbd9cb" stroke-width="1">
+    <path d="M1 128L28 117l17 3 24-4 20 5 12 12-26 8-23 13-31-5L0 155Z"/>
+    <path d="M98 123l24 2 13 9 15 1 35-13 16-1 8 5-21 10-24 9-38 7-14-5Z"/>
+    <path d="M48 154l24-12 27-8 16 13-5 9-17 5-19 25-14 2-12-9Z"/>
+    <path d="M346 112l-28 14-12 13 2 16 12 11 21-3 10-15Z"/>
+    <path d="M351 194l-20-6-16 7-15 20-14 3-9 11 13 24 6 24 19 16 36 1Z"/>
+    <path d="M0 302l27-9 22 3 21-4 19 6 34-6 10 12-7 22-15 10-25-1-16 14H0Z"/>
+    <path d="M158 255l26-12 26-2 18-11 12 12-3 14-17 9-27-3-16 8Z"/>
+    <path d="M35 12l31-3 9 11-8 11-20 2-16-6ZM232 27l22-7 18 9 9 18-11 13-24-3-13-14Z"/>
+  </g>
+  <g fill="none" stroke="#c0d3ca" stroke-linecap="round">
+    <path d="M0 43L13 48l6 10-8 11 2 12 12 12 2 13L15 121 0 122" stroke-width="7"/>
+    <path d="M333 199q-15 22-38 23m54-10q-20 27-47 30m48-12q-11 19-41 30m41-11q-13 14-34 22" opacity=".7"/>
+  </g>
+  <g fill="none" stroke="#c8d0c5" stroke-width=".85" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M-5 24l40-14 24 15 25 11 24-2 32-14 36-7 28 1 25 12 24-3 25 14 29-5 47-18
+      M0 77l34-7 32-14 20 11 24-7 25-12 18-4 29-16 22 4 23 11 24 2 19 18 33-1 15 13 36-12
+      M-3 104l37-13 29 3 31-8 28 0 14-13 24-4 22-18 24 0 25 11 17 9 25 12 29 1 26 10 27-7
+      M1 181l22-10 19 5 15 14 14-5 14-15 20-5 22 3 28-11 23-6 28-12 27-7 18-12 23-2 22-6 16-16 38 6
+      M-2 206l31-12 13 9 16 8 20-7 16-13 16-1 19-9 29-9 34-5 29-12 22-2 25-18 24 0 25 4 37-2
+      M-4 236l29-16 27 3 19 4 24-12 19-7 19-8 21-7 20-10 29-3 22-7 28-7 22-12 18-3 29 8 31-11
+      M-4 263l21-6 17-13 22 0 16 1 14-9 30-7 31-12 20-3 17-7 32-11 26-5 17-12 28-8 21 2 48 10
+      M-3 283l27-6 24 2 24-11 29 1 33-21 20-7 33-14 20 0 24-13 45-9 18-10 21-6 36 4
+      M-2 321l29-6 31 5 27-9 28 6 21-13 31-5 28-15 20 0 24-13 27-3 16-7m18 28 21 15 31 5
+      M-2 342l41-6 48 2 32-3 24-14 23 2 32-13 28-1 17-14 23-6 17 3 34 23 36 5
+      M9-3l13 24 11 28 1 21 7 14 1 19 10 13m-24 33-5 22 6 23-4 26-8 37 7 20 3 38 12 21 4 17
+      M42-4l17 29 7 31-3 38 6 22m13 41-11 28 7 19-7 23 1 18 0 23-15 52 5 29
+      M80-5l4 41 2 31 8 19 4 23 6 19 12 19-11 18 5 25 4 18 2 21-15 40 12 48 6 18-1 19
+      M114-2l-6 36 2 26 12 26 5 24 12 21 3 22 13 4 3 15-4 21-7 24 7 24-20 7 6 24-6 32 9 17 1 31
+      M143-7l-3 27-5 28 1 25 16 17 13 20 1 24 12 17 14 16-18 16-7 31 20 13 6 17-7 20 7 20 5 26 17 39
+      M176-4v17l6 15v23l5 30 7 24 12 21v13l15 16 4 18-9 23-9 31 23 7 7 21v16l6 24-3 27 14 29
+      M208-6l-4 20v18l2 19 10 28 6 19 13 29-2 5 10 21 10 13-11 25 9 20 12 14-3 22 4 21 2 21 7 28-2 33
+      M245-7l8 30-2 22-3 26-2 21 6 17 22 9-6 17 7 19 12 17-11 34 4 25m3 62 5 28 16 28
+      M284-6l-6 43-8 26 3 20 13 16 10 13-4 23 1 16 15 22 7 16
+      M315-7l-8 39-4 30-1 22 10 12 15 16-10 27 5 20 14 14m-18 131 3 24 11 24
+      M339-5l-2 36 11 21-7 25 10 13m-1 207-4 29-5 27"/>
+    <path d="M21 126l12 9 13-4m-8 114 6 15-7 14m56-82 8 7-6 16m32-47 2 13m31-112 8 15-16 6m37 177 16 9-4 9m-129 8 17 5m20-8 4 13m89 9 27 8 20-3m54-244 11 12m-50 13 13-1 10 10m-47 23 4 12m4 62 17 10m-60-26 7 9m-107 43 10 5m-22 23 16 5m37-226 7 17m-65 56 10 11m201-18 16 1"/>
+  </g>
+  <g fill="none" stroke="#aab9ae" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-5 118L25 106l21-4 24 3 28 4 29 1 38 0 29-5 28-7 24-6 27-5 29-3 54-13"/>
+    <path d="M-5 192L24 181l33 9 22-1 26-12 22-9 28-11 23-6 28-12 27-7 18-12 23-2 22-6 29 1 30-9"/>
+    <path d="M-1 296l27-8 46-20 29 1 33-21 20-7 33-14 20 0 24-13 21-4 24-5 18-10 21-6 36 4"/>
+    <path d="M28 -7l5 30 12 24 11 26 3 25 2 17-8 19-5 20-6 22 0 27 10 20 4 21-8 35 1 17 8 24 6 34"/>
+    <path d="M197 -7l-6 26-9 32 5 30 7 24 12 21v13l15 16 4 18-9 23-9 31 23 7 7 21v16l6 24 9 25 5 35"/>
+    <path d="M325 -6l-7 29-11 9-4 30-1 22 10 12 15 16-10 27 5 20-14 14-14 22-8 23-6 12 0 31 9 18 10 20 10 31 4 25"/>
+    <path d="M-3 61l37-12 29-15 21 2 24-2 32-14 36-7 28 1 25 12 24-3 25 14 29-5 47-18" opacity=".7"/>
+  </g>
+  <g fill="#536b5b" font-size="8.5" font-family="inherit" letter-spacing=".35">
+    <text x="15" y="98">NEW TOWN</text>
+    <text x="121" y="143">PRINCES ST GARDENS</text>
+    <text x="115" y="231">OLD TOWN</text>
+    <text x="17" y="314">THE MEADOWS</text>
+    <text x="291" y="276">HOLYROOD</text>
+  </g>
+  <path id="route-ink" d="M56 244L72 245l14-9 30-7-2-21-4-18 13-6 6-3-2-13 28-11 23-6 28-12 27-7 18-12 23-2 22-6 16-16-10-12 1-22"
+    pathLength="1" fill="none" stroke="#b75131" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+</svg>
+  <p class="stops-title">* 5 little stops</p>
+  <p class="map-caption">illustrated route</p>
+  <button class="pin" type="button" data-stop="1" data-note="A street you might have missed" aria-label="Stop 1: A street you might have missed" aria-pressed="false" style="--x:16%;--y:69.71428571428571%;--delay:0.1s"><span aria-hidden="true">1</span></button>
+  <button class="pin" type="button" data-stop="2" data-note="Followed the sound of footsteps" aria-label="Stop 2: Followed the sound of footsteps" aria-pressed="false" style="--x:31.428571428571427%;--y:54.285714285714285%;--delay:0.45s"><span aria-hidden="true">2</span></button>
+  <button class="pin" type="button" data-stop="3" data-note="Found an unexpected little detail" aria-label="Stop 3: Found an unexpected little detail" aria-pressed="false" style="--x:50.857142857142854%;--y:43.142857142857146%;--delay:0.72s"><span aria-hidden="true">3</span></button>
+  <button class="pin" type="button" data-stop="4" data-note="An old stone with a story" aria-label="Stop 4: An old stone with a story" aria-pressed="false" style="--x:66.57142857142857%;--y:37.714285714285715%;--delay:0.96s"><span aria-hidden="true">4</span></button>
+  <button class="pin" type="button" data-stop="5" data-note="The end is somebody else's beginning" aria-label="Stop 5: The end is somebody else's beginning" aria-pressed="false" style="--x:86.57142857142857%;--y:17.714285714285715%;--delay:1.29s"><span aria-hidden="true">5</span></button>
+</div>
+<p class="discovery" id="stop-note" role="status">tap a stop to read what you noticed.</p>
+<div class="statstrip"><div><strong>2.3 miles</strong><span>DISTANCE</span></div><div><strong>30′52″</strong><span>TIME</span></div><div><strong>5</strong><span>STOPS</span></div></div><div class="bottom"><button class="action" id="finish">finish journey →</button></div></section>
+<section class="page editor-page" id="editor" hidden><h1 class="title" id="editor-title" tabindex="-1">leave a prompt for someone to explore the city.</h1><div class="writing"><textarea id="prompt" maxlength="500" aria-describedby="prompt-hint count" aria-label="Write a wandering prompt" placeholder="follow a sound you cannot see..."></textarea><div class="hint"><span id="prompt-hint">a sentence is enough.</span><span id="count">0 / 500</span></div></div><div class="inspiration"><h2>INSPIRATION, IF YOU NEED IT</h2><button data-inspire="turn down a street you have never noticed.">↳ turn down a street you have never noticed.</button><button data-inspire="follow a sound you cannot see.">↳ follow a sound you cannot see.</button><button data-inspire="find a tiny detail someone else missed.">↳ find a tiny detail someone else missed.</button></div><div class="bottom"><button class="action" id="pass" disabled>pass it on ↑</button></div></section>
+<section class="page sent-page" id="sent" hidden><div class="paper-animation" aria-hidden="true"><div class="paper-ground"></div><div id="paper-pile"></div></div><h1 id="sent-title" tabindex="-1">a thought<br>passed on.</h1><p class="sub">now someone else's wandering can begin.</p><blockquote class="quote" id="quote"></blockquote></section></main>
+<script>
+(() => {
+  'use strict';
+
+  const byId = id => document.getElementById(id);
+  const pages = ['receipt', 'journey', 'editor', 'sent'].map(byId);
+  const back = byId('back');
+  const map = document.querySelector('.map');
+  const stops = [...map.querySelectorAll('.pin')];
+  const stopNote = byId('stop-note');
+  const routeInk = byId('route-ink');
+  const routeMenu = byId('demo-routes');
+  const routeToggle = byId('demo-toggle');
+  const routeButtons = [...routeMenu.querySelectorAll('.demo-route')];
+  const stopHint = stopNote.textContent;
+  // Coordinates share the map's 350 × 350 SVG viewBox.
+  const demoRoutes = [
+    { name: "Old Town", path: "M56 244L72 245l14-9 30-7-2-21-4-18 13-6 6-3-2-13 28-11 23-6 28-12 27-7 18-12 23-2 22-6 16-16-10-12 1-22", stops: [[56,244],[110,190],[178,151],[233,132],[303,62]] },
+    { name: "New Town", path: "M41 84L63 94 94 86 122 86 136 73 160 69 182 51 206 51 231 62 248 71 273 83 302 84 312 96 327 112", stops: [[41,84],[122,86],[182,51],[248,71],[312,96]] },
+    { name: "The Meadows", path: "M48 279L72 268 101 269 134 248 154 241 187 227 207 227 230 234 237 255 237 271 213 284 193 284 165 299 134 304 113 317 85 311", stops: [[48,279],[134,248],[207,227],[237,271],[134,304]] },
+    { name: "Holyrood", path: "M302 84L312 96 327 112 317 139 322 159 308 173 294 195 286 218 280 230 280 261 289 279 299 299 309 330", stops: [[302,84],[317,139],[294,195],[280,261],[299,299]] }
+  ];
+  let selectedRoute = 0;
+  const input = byId('prompt');
+  const count = byId('count');
+  const pass = byId('pass');
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  let current = 0;
+  let introCleanup = () => {};
+
+  function runTicketIntro() {
+    if (reduceMotion.matches || current !== 0 || !Element.prototype.animate) return;
+    const target = document.querySelector('#receipt .ticket');
+    const app = byId('app');
+    const overlay = document.createElement('div');
+    const ticket = target.cloneNode(true);
+    overlay.className = 'ticket-intro';
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.append(ticket);
+    app.append(overlay);
+
+    const rect = target.getBoundingClientRect();
+    const root = app.getBoundingClientRect();
+    const centerShift = (root.height * .37) - (rect.top - root.top + rect.height / 2);
+    const fit = Math.min(1.28, (root.width - 14) / rect.width);
+    Object.assign(ticket.style, {
+      left: (rect.left - root.left + (rect.width - target.offsetWidth) / 2) + 'px',
+      top: (rect.top - root.top + (rect.height - target.offsetHeight) / 2) + 'px',
+      width: target.offsetWidth + 'px',
+      height: target.offsetHeight + 'px'
+    });
+    const move = ticket.animate(
+      [
+        { transform: 'translateY(' + centerShift + 'px) scale(' + fit + ') rotate(-5deg)' },
+        { transform: 'none' }
+      ],
+      { duration: 820, easing: 'cubic-bezier(.2,.7,.25,1)', fill: 'both' }
+    );
+    const fade = overlay.animate(
+      [{ opacity: 1, offset: 0 }, { opacity: 1, offset: .65 }, { opacity: 0, offset: 1 }],
+      { duration: 880, easing: 'ease-out', fill: 'both' }
+    );
+    function clearIntro() {
+      overlay.remove();
+      move.cancel();
+      fade.cancel();
+      window.removeEventListener('resize', clearIntro);
+      reduceMotion.removeEventListener('change', clearIntro);
+      introCleanup = () => {};
+    }
+    introCleanup = clearIntro;
+    window.addEventListener('resize', clearIntro, { once: true });
+    reduceMotion.addEventListener('change', clearIntro, { once: true });
+    fade.finished.then(clearIntro, () => {});
+  }
+
+  function startPaperRain() {
+    const pile = byId('paper-pile');
+    const slips = Array.from({ length: 15 }, (_, index) => {
+      const slip = document.createElement('span');
+      slip.className = 'paper-slip';
+      slip.style.setProperty('--pile-x', 'calc(50% + ' + ((index * 31) % 152 - 95) + 'px)');
+      slip.style.setProperty('--pile-y', (16 + (index * 9) % 34) + 'px');
+      slip.style.setProperty('--rotation', ((index * 43) % 101 - 50) + 'deg');
+      slip.style.setProperty('--drift', ((index * 17) % 108 - 54) + 'px');
+      slip.style.setProperty('--delay', (index * .062) + 's');
+      slip.style.setProperty('--duration', (1.12 + (index % 3) * .15) + 's');
+      return slip;
+    });
+    pile.replaceChildren(...slips);
+  }
+
+  function go(next, moveFocus = true) {
+    introCleanup();
+    routeMenu.open = false;
+    current = next;
+    pages.forEach((page, index) => {
+      page.hidden = index !== next;
+      page.classList.toggle('active', index === next);
+    });
+    back.hidden = next === 0;
+    // Removing the class on exit lets the browser replay the route on return.
+    map.classList.toggle('animate-route', next === 1);
+    if (next === 3) startPaperRain();
+
+    window.scrollTo(0, 0);
+    if (moveFocus) pages[next].querySelector('h1').focus({ preventScroll: true });
+  }
+
+  function chooseRoute(index) {
+    if (index === selectedRoute) return;
+    selectedRoute = index;
+    const route = demoRoutes[index];
+
+    map.classList.remove('animate-route');
+    routeInk.setAttribute('d', route.path);
+    map.setAttribute('aria-label', route.name + ' illustrated walking route with five stops');
+    routeButtons.forEach((button, position) => {
+      button.setAttribute('aria-pressed', String(position === index));
+    });
+    stops.forEach((stop, position) => {
+      const [x, y] = route.stops[position];
+      stop.style.setProperty('--x', (x / 350 * 100) + '%');
+      stop.style.setProperty('--y', (y / 350 * 100) + '%');
+      stop.setAttribute('aria-pressed', 'false');
+    });
+    stopNote.textContent = stopHint;
+    // Flush the style change so the route and pins replay immediately.
+    void map.offsetWidth;
+    map.classList.add('animate-route');
+  }
+
+  routeButtons.forEach((button, index) => {
+    button.addEventListener('click', () => {
+      chooseRoute(index);
+      routeMenu.open = false;
+      routeToggle.focus({ preventScroll: true });
+    });
+  });
+
+  document.addEventListener('click', event => {
+    if (routeMenu.open && !routeMenu.contains(event.target)) routeMenu.open = false;
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !routeMenu.open) return;
+    event.preventDefault();
+    routeMenu.open = false;
+    routeToggle.focus({ preventScroll: true });
+  });
+
+  function syncEditor() {
+    pass.disabled = !input.value.trim();
+    count.textContent = input.value.length + ' / ' + input.maxLength;
+  }
+
+  back.addEventListener('click', () => go(Math.max(0, current - 1)));
+  byId('view').addEventListener('click', () => go(1));
+  byId('finish').addEventListener('click', () => go(2));
+
+  stops.forEach(stop => {
+    stop.addEventListener('click', () => {
+      stops.forEach(marker => marker.setAttribute('aria-pressed', String(marker === stop)));
+      stopNote.textContent = stop.dataset.stop + ' / ' + stops.length + ' · ' + stop.dataset.note;
+    });
+  });
+
+  input.addEventListener('input', syncEditor);
+  document.querySelectorAll('[data-inspire]').forEach(button => {
+    button.addEventListener('click', () => {
+      input.value = button.dataset.inspire;
+      syncEditor();
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    });
+  });
+
+  pass.addEventListener('click', () => {
+    const prompt = input.value.trim();
+    if (!prompt) return;
+    byId('quote').textContent = '“' + prompt + '”';
+    try {
+      const key = 'derive_handdrawn_prompts';
+      const saved = JSON.parse(localStorage.getItem(key) || '[]');
+      const prompts = Array.isArray(saved) ? saved : [];
+      prompts.push({ text: prompt, at: new Date().toISOString() });
+      localStorage.setItem(key, JSON.stringify(prompts.slice(-50)));
+    } catch (error) {
+      console.warn('Save unavailable', error);
+    }
+    go(3);
+  });
+
+  syncEditor();
+  const demo = new URLSearchParams(location.search).get('screen');
+  if (demo === 'journey' || demo === 'prompt') {
+    go(demo === 'journey' ? 1 : 2, false);
+  } else if (demo !== 'sent') {
+    requestAnimationFrame(runTicketIntro);
+  }
+})();
+</script>
+</body>
+</html>
