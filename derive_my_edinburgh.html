@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f2efe4">
+<title>dérive. · My Edinburgh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --paper:#f2efe4; --ink:#643819; --brick:#a84710; --forest:#084d40; --gutter:clamp(18px,5.8vw,25px); }
+* { box-sizing:border-box; }
+body { margin:0; color:var(--ink); background:var(--paper); font:14px/1.55 "Fira Code",Consolas,monospace; }
+.app { max-width:510px; min-height:100svh; margin:auto; box-shadow:0 0 30px #362a1d12; }
+.top {
+  display:grid; place-items:center; position:relative;
+  min-height:calc(70px + env(safe-area-inset-top)); padding-top:env(safe-area-inset-top);
+  background:linear-gradient(#e5b67230,#e5b67218); color:var(--brick);
+  font-size:25px; font-weight:600; letter-spacing:-1.7px;
+}
+.top::after {
+  content:""; position:absolute; bottom:0; inset-inline:var(--gutter);
+  border-bottom:1px dashed #c8592480;
+}
+main {
+  padding:clamp(18px,4svh,34px)
+    max(var(--gutter),env(safe-area-inset-right))
+    max(24px,env(safe-area-inset-bottom))
+    max(var(--gutter),env(safe-area-inset-left));
+}
+h1 { font-size:clamp(28px,8vw,39px); font-weight:500; letter-spacing:-.075em; line-height:1.15; margin:0 0 6px; }
+.intro { margin:0 0 18px; font-size:13px; }
+figure {
+  position:relative; margin:0; overflow:hidden;
+  border:1px solid #bfc9b9; border-radius:4px 23px 4px 25px; background:#eaf0e7;
+}
+figure svg { display:block; width:100%; height:auto; }
+figure::after {
+  content:""; position:absolute; inset:70% 0 0;
+  background:linear-gradient(transparent,#edf1e8d9); pointer-events:none;
+}
+figcaption {
+  position:absolute; z-index:1; bottom:9px; right:10px; padding:2px 6px;
+  color:var(--ink); background:#f6f4e9e8; border-radius:2px 6px; font-size:10px;
+}
+.walk {
+  stroke:var(--colour); stroke-width:2.4; vector-effect:non-scaling-stroke;
+  transition:opacity .2s,stroke-width .2s;
+}
+.walks.has-selection .walk { opacity:.28; }
+.walks.has-selection .walk.selected { opacity:1; stroke-width:3.7; }
+.map-marker {
+  position:absolute; z-index:2; left:var(--x); top:var(--y); translate:-50% -50%;
+  display:grid; place-items:center; width:44px; height:44px; padding:0;
+  border:0; border-radius:50%; background:transparent;
+}
+.map-marker span {
+  display:grid; place-items:center; width:23px; height:23px; border:1px solid var(--brick);
+  border-radius:50%; background:#faf5e5; color:var(--ink); font-size:11px;
+  font-weight:600; box-shadow:0 1px 3px #64381933;
+}
+.map-marker[aria-pressed="true"] span { background:var(--brick); color:#fff8e9; }
+.map-marker:focus-visible { outline-offset:-4px; }
+.status { margin:11px 0 0; min-height:1.55em; font-size:12px; }
+.status p { margin:0; }
+.walk-card {
+  padding:9px 11px; background:#faf5e5; border-left:2px solid var(--brick);
+  border-radius:2px 9px 2px 2px;
+}
+.walk-card strong, .walk-card span { display:block; }
+.walk-meta { margin-top:4px; font-size:11px; }
+.buttons { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px; }
+button { font:inherit; color:inherit; cursor:pointer; touch-action:manipulation; }
+button:focus-visible, summary:focus-visible { outline:2px solid var(--forest); outline-offset:3px; }
+button:active { transform:translateY(1px); }
+.replay {
+  min-height:44px; padding:6px 14px; border:1px solid var(--forest);
+  border-radius:4px 13px 5px 12px; background:var(--forest); color:#f2efe4;
+}
+details { margin-top:15px; border-block:1px solid #c4c4b2; }
+summary { cursor:pointer; padding:11px 0; min-height:44px; }
+ol { margin:0; padding:0 0 5px; list-style:none; }
+.walk-select {
+  display:grid; grid-template-columns:15px 1fr; align-items:center; gap:7px; text-align:left;
+  min-height:44px; width:100%; border:0; padding:5px 8px; background:transparent;
+  border-radius:4px 11px; font-size:12px;
+}
+.walk-select::before { content:""; border-top:2px solid var(--brick); }
+.walk-select[aria-pressed="true"] { background:#e5b67247; font-weight:600; }
+@media (prefers-reduced-motion:reduce) { .walk { transition:none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">dérive.</header>
+  <main>
+    <h1>my edinburgh.</h1>
+    <p class="intro">5 in total</p>
+    <figure>
+<svg viewBox="0 0 350 350" role="img" aria-labelledby="map-title map-description" focusable="false">
+  <title id="map-title">Five walks on an illustrated Edinburgh map</title>
+  <desc id="map-description">Overlapping routes pass through Old Town, New Town, the Meadows and Holyrood. This prototype uses example routes.</desc>
+  <defs>
+    <linearGradient id="map-paper" x2="0%" y2="100%">
+      <stop stop-color="#edf1e8"/><stop offset="1" stop-color="#f3f1e7"/>
+    </linearGradient>
+  </defs>
+  <rect width="350" height="350" fill="url(#map-paper)"/>
+  <g fill="#dae6d7" stroke="#cbd9cb" stroke-width="1">
+    <path d="M1 128L28 117l17 3 24-4 20 5 12 12-26 8-23 13-31-5L0 155Z"/>
+    <path d="M98 123l24 2 13 9 15 1 35-13 16-1 8 5-21 10-24 9-38 7-14-5Z"/>
+    <path d="M48 154l24-12 27-8 16 13-5 9-17 5-19 25-14 2-12-9Z"/>
+    <path d="M346 112l-28 14-12 13 2 16 12 11 21-3 10-15Z"/>
+    <path d="M351 194l-20-6-16 7-15 20-14 3-9 11 13 24 6 24 19 16 36 1Z"/>
+    <path d="M0 302l27-9 22 3 21-4 19 6 34-6 10 12-7 22-15 10-25-1-16 14H0Z"/>
+    <path d="M158 255l26-12 26-2 18-11 12 12-3 14-17 9-27-3-16 8Z"/>
+    <path d="M35 12l31-3 9 11-8 11-20 2-16-6ZM232 27l22-7 18 9 9 18-11 13-24-3-13-14Z"/>
+  </g>
+  <g fill="none" stroke="#c0d3ca" stroke-linecap="round">
+    <path d="M0 43L13 48l6 10-8 11 2 12 12 12 2 13L15 121 0 122" stroke-width="7"/>
+    <path d="M333 199q-15 22-38 23m54-10q-20 27-47 30m48-12q-11 19-41 30m41-11q-13 14-34 22" opacity=".7"/>
+  </g>
+  <g fill="none" stroke="#c8d0c5" stroke-width=".85" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M-5 24l40-14 24 15 25 11 24-2 32-14 36-7 28 1 25 12 24-3 25 14 29-5 47-18
+      M0 77l34-7 32-14 20 11 24-7 25-12 18-4 29-16 22 4 23 11 24 2 19 18 33-1 15 13 36-12
+      M-3 104l37-13 29 3 31-8 28 0 14-13 24-4 22-18 24 0 25 11 17 9 25 12 29 1 26 10 27-7
+      M1 181l22-10 19 5 15 14 14-5 14-15 20-5 22 3 28-11 23-6 28-12 27-7 18-12 23-2 22-6 16-16 38 6
+      M-2 206l31-12 13 9 16 8 20-7 16-13 16-1 19-9 29-9 34-5 29-12 22-2 25-18 24 0 25 4 37-2
+      M-4 236l29-16 27 3 19 4 24-12 19-7 19-8 21-7 20-10 29-3 22-7 28-7 22-12 18-3 29 8 31-11
+      M-4 263l21-6 17-13 22 0 16 1 14-9 30-7 31-12 20-3 17-7 32-11 26-5 17-12 28-8 21 2 48 10
+      M-3 283l27-6 24 2 24-11 29 1 33-21 20-7 33-14 20 0 24-13 45-9 18-10 21-6 36 4
+      M-2 321l29-6 31 5 27-9 28 6 21-13 31-5 28-15 20 0 24-13 27-3 16-7m18 28 21 15 31 5
+      M-2 342l41-6 48 2 32-3 24-14 23 2 32-13 28-1 17-14 23-6 17 3 34 23 36 5
+      M9-3l13 24 11 28 1 21 7 14 1 19 10 13m-24 33-5 22 6 23-4 26-8 37 7 20 3 38 12 21 4 17
+      M42-4l17 29 7 31-3 38 6 22m13 41-11 28 7 19-7 23 1 18 0 23-15 52 5 29
+      M80-5l4 41 2 31 8 19 4 23 6 19 12 19-11 18 5 25 4 18 2 21-15 40 12 48 6 18-1 19
+      M114-2l-6 36 2 26 12 26 5 24 12 21 3 22 13 4 3 15-4 21-7 24 7 24-20 7 6 24-6 32 9 17 1 31
+      M143-7l-3 27-5 28 1 25 16 17 13 20 1 24 12 17 14 16-18 16-7 31 20 13 6 17-7 20 7 20 5 26 17 39
+      M176-4v17l6 15v23l5 30 7 24 12 21v13l15 16 4 18-9 23-9 31 23 7 7 21v16l6 24-3 27 14 29
+      M208-6l-4 20v18l2 19 10 28 6 19 13 29-2 5 10 21 10 13-11 25 9 20 12 14-3 22 4 21 2 21 7 28-2 33
+      M245-7l8 30-2 22-3 26-2 21 6 17 22 9-6 17 7 19 12 17-11 34 4 25m3 62 5 28 16 28
+      M284-6l-6 43-8 26 3 20 13 16 10 13-4 23 1 16 15 22 7 16
+      M315-7l-8 39-4 30-1 22 10 12 15 16-10 27 5 20 14 14m-18 131 3 24 11 24
+      M339-5l-2 36 11 21-7 25 10 13m-1 207-4 29-5 27"/>
+    <path d="M21 126l12 9 13-4m-8 114 6 15-7 14m56-82 8 7-6 16m32-47 2 13m31-112 8 15-16 6m37 177 16 9-4 9m-129 8 17 5m20-8 4 13m89 9 27 8 20-3m54-244 11 12m-50 13 13-1 10 10m-47 23 4 12m4 62 17 10m-60-26 7 9m-107 43 10 5m-22 23 16 5m37-226 7 17m-65 56 10 11m201-18 16 1"/>
+  </g>
+  <g fill="none" stroke="#aab9ae" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-5 118L25 106l21-4 24 3 28 4 29 1 38 0 29-5 28-7 24-6 27-5 29-3 54-13"/>
+    <path d="M-5 192L24 181l33 9 22-1 26-12 22-9 28-11 23-6 28-12 27-7 18-12 23-2 22-6 29 1 30-9"/>
+    <path d="M-1 296l27-8 46-20 29 1 33-21 20-7 33-14 20 0 24-13 21-4 24-5 18-10 21-6 36 4"/>
+    <path d="M28 -7l5 30 12 24 11 26 3 25 2 17-8 19-5 20-6 22 0 27 10 20 4 21-8 35 1 17 8 24 6 34"/>
+    <path d="M197 -7l-6 26-9 32 5 30 7 24 12 21v13l15 16 4 18-9 23-9 31 23 7 7 21v16l6 24 9 25 5 35"/>
+    <path d="M325 -6l-7 29-11 9-4 30-1 22 10 12 15 16-10 27 5 20-14 14-14 22-8 23-6 12 0 31 9 18 10 20 10 31 4 25"/>
+    <path d="M-3 61l37-12 29-15 21 2 24-2 32-14 36-7 28 1 25 12 24-3 25 14 29-5 47-18" opacity=".7"/>
+  </g>
+  <g fill="#536b5b" font-size="8.5" font-family="inherit" letter-spacing=".35">
+    <text x="15" y="98">NEW TOWN</text>
+    <text x="121" y="143">PRINCES ST GARDENS</text>
+    <text x="115" y="231">OLD TOWN</text>
+    <text x="17" y="314">THE MEADOWS</text>
+    <text x="291" y="276">HOLYROOD</text>
+  </g>
+  <g class="walks" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path class="walk" pathLength="1" d="M56 244L72 245l14-9 30-7-2-21-4-18 13-6 6-3-2-13 28-11 23-6 28-12 27-7 18-12 23-2 22-6 16-16-10-12 1-22" style="--colour:#A84710" data-walk="0"/>
+    <path class="walk" pathLength="1" d="M45 47l21 9 20 11 24-7 25-12 18-4 29-16 22 4 2 19 10 28 6 19 13 29-2 5-27 7-28 12 14 16-18 16-7 31" style="--colour:#C85924" data-walk="1"/>
+    <path class="walk" pathLength="1" d="M42 297l26-10 32-18 1 15 12 33 21-13 31-5 28-15 20 0 24-13-4-17-3-13-23-7-20-7-33 14-20 7-33 21-29-1-16-23" style="--colour:#BD6D32" data-walk="2"/>
+    <path class="walk" pathLength="1" d="M206 139l27-7 18-12 23-2 22-6 16-16 15 16-10 27 5 20-14 14-14 22-8 23-6 12 0 31 9 18 10 20-27 3-25 6" style="--colour:#C85924" data-walk="3"/>
+    <path class="walk" pathLength="1" d="M34 70l7 14 1 19 4-1 24 3 28 4 29 1 38 0 29-5 28-7 24-6 6 17 22 9-23 2-18 12-27 7-28 12-23 6-28 11-22 9-26 12-22 1-15 13" style="--colour:#A84710" data-walk="4"/>
+  </g>
+</svg>
+      <button class="map-marker" style="--x:24.57143%;--y:67.42857%" type="button" aria-label="Walk 1, Old Town" aria-controls="walk-card" aria-pressed="false"><span aria-hidden="true">1</span></button>
+      <button class="map-marker" style="--x:38.57143%;--y:13.71429%" type="button" aria-label="Walk 2, New Town" aria-controls="walk-card" aria-pressed="false"><span aria-hidden="true">2</span></button>
+      <button class="map-marker" style="--x:47.14286%;--y:85.42857%" type="button" aria-label="Walk 3, The Meadows" aria-controls="walk-card" aria-pressed="false"><span aria-hidden="true">3</span></button>
+      <button class="map-marker" style="--x:84.00000%;--y:55.71429%" type="button" aria-label="Walk 4, Holyrood" aria-controls="walk-card" aria-pressed="false"><span aria-hidden="true">4</span></button>
+      <button class="map-marker" style="--x:20.00000%;--y:30.00000%" type="button" aria-label="Walk 5, New Town to Old Town" aria-controls="walk-card" aria-pressed="false"><span aria-hidden="true">5</span></button>
+      <figcaption>illustrated map · sample walks</figcaption>
+    </figure>
+    <div class="status" id="status" role="status" aria-atomic="true">
+      <p id="status-message">5 walks woven together.</p>
+      <div class="walk-card" id="walk-card" hidden>
+        <strong id="walk-title"></strong>
+        <span id="walk-description"></span>
+        <span class="walk-meta" id="walk-meta"></span>
+      </div>
+    </div>
+    <div class="buttons">
+      <button class="replay" id="replay" type="button">replay walks ↻</button>
+    </div>
+    <details>
+      <summary>explore the 5 walks</summary>
+      <ol>
+        <li><button class="walk-select" data-walk="0" type="button" aria-pressed="false">Old Town · a first wander</button></li>
+        <li><button class="walk-select" data-walk="1" type="button" aria-pressed="false">New Town · a morning detour</button></li>
+        <li><button class="walk-select" data-walk="2" type="button" aria-pressed="false">The Meadows · an afternoon loop</button></li>
+        <li><button class="walk-select" data-walk="3" type="button" aria-pressed="false">Holyrood · a walk towards the hill</button></li>
+        <li><button class="walk-select" data-walk="4" type="button" aria-pressed="false">New Town to Old Town · a familiar crossing</button></li>
+      </ol>
+    </details>
+  </main>
+</div>
+<script>
+(() => {
+  const map = document.querySelector('.walks');
+  const paths = [...map.querySelectorAll('.walk')];
+  const buttons = [...document.querySelectorAll('.walk-select')];
+  const markers = [...document.querySelectorAll('.map-marker')];
+  const status = document.getElementById('status-message');
+  const card = document.getElementById('walk-card');
+  const cardTitle = document.getElementById('walk-title');
+  const cardDescription = document.getElementById('walk-description');
+  const cardMeta = document.getElementById('walk-meta');
+  const sampleDetails = [
+    "sample · 18 Nov 2026 · 2.3 mi · 31 min",
+    "sample · 20 Nov 2026 · 1.4 mi · 25 min",
+    "sample · 22 Nov 2026 · 1.7 mi · 29 min",
+    "sample · 24 Nov 2026 · 2.0 mi · 36 min",
+    "sample · 27 Nov 2026 · 1.6 mi · 28 min"
+  ];
+  const replay = document.getElementById('replay');
+  const motion = matchMedia('(prefers-reduced-motion: reduce)');
+  const summary = paths.length + ' walks woven together.';
+  let animations = [];
+  let selected = -1;
+
+  function clearAnimations() {
+    animations.forEach(animation => animation.cancel());
+    animations = [];
+  }
+
+  function select(next) {
+    selected = next;
+    map.classList.toggle('has-selection', selected >= 0);
+    buttons.forEach((button, index) => {
+      const pressed = String(index === selected);
+      button.setAttribute('aria-pressed', pressed);
+      markers[index].setAttribute('aria-pressed', pressed);
+      paths[index].classList.toggle('selected', index === selected);
+    });
+    status.hidden = selected >= 0;
+    card.hidden = selected < 0;
+    if (selected < 0) {
+      status.textContent = summary;
+      return;
+    }
+    const [title, description] = buttons[selected].textContent.trim().split(' · ');
+    cardTitle.textContent = title;
+    cardDescription.textContent = description;
+    cardMeta.textContent = sampleDetails[selected];
+  }
+
+  function play() {
+    clearAnimations();
+    select(-1);
+    if (motion.matches || !Element.prototype.animate) return;
+    status.textContent = 'Drawing your walks…';
+    // Every path uses a normalized length so the dash can reveal it end to end.
+    animations = paths.map((path, index) => path.animate(
+      [{ strokeDasharray:'1', strokeDashoffset:1 }, { strokeDasharray:'1', strokeDashoffset:0 }],
+      { duration:1800, delay:180 + index * 860, easing:'cubic-bezier(.32,.08,.48,1)', fill:'backwards' }
+    ));
+    Promise.all(animations.map(animation => animation.finished)).then(() => {
+      animations = [];
+      status.textContent = summary;
+    }, () => {});
+  }
+
+  replay.addEventListener('click', play);
+  function toggleWalk(index) {
+    clearAnimations();
+    select(selected === index ? -1 : index);
+  }
+  buttons.forEach((button, index) => button.addEventListener('click', () => toggleWalk(index)));
+  markers.forEach((marker, index) => marker.addEventListener('click', () => toggleWalk(index)));
+  motion.addEventListener('change', () => {
+    clearAnimations();
+    select(selected);
+  });
+  play();
+})();
+</script>
+</body>
+</html>
